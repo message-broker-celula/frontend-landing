@@ -1,0 +1,3 @@
+msb.andrescortes.dev {
+	reverse_proxy landing:3000
+}
