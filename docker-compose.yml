@@ -4,25 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_CELL_NAME: ${NEXT_PUBLIC_CELL_NAME:-msb}
+        NEXT_PUBLIC_CELL_NAME: ${NEXT_PUBLIC_CELL_NAME:-mbro}
         NEXT_PUBLIC_APK_URL: ${NEXT_PUBLIC_APK_URL:-}
-    restart: unless-stopped
-    expose:
-      - "3000"
 
-  caddy:
-    image: caddy:2-alpine
+    container_name: landing
+
     restart: unless-stopped
+
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - landing
-
-volumes:
-  caddy_data:
-  caddy_config:
+      - "3000:3000"
