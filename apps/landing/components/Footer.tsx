@@ -6,12 +6,17 @@ const columns = [
     title: "Producto",
     links: [
       { href: "#how", label: "Cómo funciona" },
+      { href: "#metrics", label: "Métricas" },
       { href: "#limits", label: "Límites" },
     ],
   },
   {
     title: "Recursos",
-    links: [{ href: apiUrl, label: "API", external: true }],
+    links: [
+      { href: apiUrl, label: "API", external: true },
+      { href: "/login", label: "Iniciar sesión" },
+      { href: "/dashboard", label: "Panel" },
+    ],
   },
 ];
 
@@ -21,7 +26,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-5xl flex-col gap-10 sm:flex-row sm:justify-between">
         <div className="max-w-xs">
           <div className="flex items-center gap-2 font-medium">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-series-1 to-series-5 text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-series-5 to-series-2 text-white">
               <Database size={16} strokeWidth={2.5} />
             </span>
             {siteConfig.cellName}

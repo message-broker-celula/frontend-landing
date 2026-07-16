@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowUpRight, Clock4, Database, Gauge, ShieldCheck } from "lucide-react";
 import { apiUrl, siteConfig } from "@/lib/site-config";
 
@@ -18,10 +19,10 @@ export default function Hero() {
       </div>
       <div className="bg-dot-grid pointer-events-none absolute inset-0" />
 
-      <div className="relative flex flex-col items-center gap-6 px-6 py-24 text-center sm:py-32">
+      <div className="relative flex flex-col items-center gap-6 px-6 pb-24 pt-28 text-center sm:pb-32 sm:pt-36">
         <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
           Bases de datos gratuitas,{" "}
-          <span className="bg-gradient-to-r from-series-1 via-series-5 to-series-2 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-series-5 via-series-1 to-series-2 bg-clip-text text-transparent">
             listas en segundos
           </span>
         </h1>
@@ -32,19 +33,21 @@ export default function Hero() {
           solo despacha, autentica y protege el acceso.
         </p>
 
-        <div className="flex flex-col gap-4 pt-4 sm:flex-row">
+        <div className="flex flex-col gap-4 pt-2 sm:flex-row">
+          <Link
+            href="/login"
+            className="rounded-full bg-gradient-to-r from-series-5 to-series-2 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-series-5/25 transition-opacity hover:opacity-90"
+          >
+            Empezar gratis
+          </Link>
           {siteConfig.apkUrl ? (
             <a
               href={siteConfig.apkUrl}
-              className="rounded-full bg-gradient-to-r from-series-1 to-series-5 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-series-1/25 transition-opacity hover:opacity-90"
+              className="rounded-full border border-line px-6 py-3 text-sm font-medium transition-colors hover:bg-surface"
             >
               Descargar APK
             </a>
-          ) : (
-            <span className="cursor-not-allowed rounded-full bg-accent-soft px-6 py-3 text-sm font-medium text-accent/70">
-              Descargar APK — próximamente
-            </span>
-          )}
+          ) : null}
           <a
             href={apiUrl}
             target="_blank"
@@ -59,7 +62,7 @@ export default function Hero() {
           </a>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-6">
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           {chips.map(({ icon: Icon, label, color }) => (
             <span
               key={label}

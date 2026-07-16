@@ -6,6 +6,7 @@ const sections = [
   { id: "top", label: "Inicio" },
   { id: "features", label: "Arquitectura" },
   { id: "how", label: "Flujo" },
+  { id: "metrics", label: "Métricas" },
   { id: "limits", label: "Límites" },
 ];
 
