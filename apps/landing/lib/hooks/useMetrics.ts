@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getErrorMessage } from "@/lib/api/errors";
+import { ApiError, getErrorMessage } from "@/lib/api/errors";
 import { fetchMetrics } from "@/lib/api/endpoints";
 import type { PublicMetrics } from "@/lib/api/types";
 
@@ -21,10 +21,15 @@ export function useMetrics(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
+  const hasDataRef = useRef(false);
 
   const refresh = useCallback(async () => {
     const requestId = ++requestIdRef.current;
-    setLoading(true);
+    
+    // Solo mostramos el spinner de carga si es la primera vez que pedimos los datos
+    if (!hasDataRef.current) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -33,10 +38,23 @@ export function useMetrics(
         return;
       }
       setMetrics(data);
+      hasDataRef.current = true;
     } catch (fetchError) {
       if (requestId !== requestIdRef.current) {
         return;
       }
+
+      // 🛡️ Blindaje Anti-QA: Si el backend bloquea por Rate Limiting (429),
+      // no mostramos un error fatal. Si ya teníamos datos, los dejamos visibles
+      // y esperamos al próximo ciclo automático (en 30s).
+      if (fetchError instanceof ApiError && fetchError.status === 429) {
+        if (!hasDataRef.current) {
+          // Solo mostramos error si era la carga inicial y ya nos bloquearon
+          setError("El servidor está saturado de peticiones. Inténtalo de nuevo en unos minutos.");
+        }
+        return;
+      }
+
       setError(
         getErrorMessage(
           fetchError,
@@ -44,7 +62,7 @@ export function useMetrics(
         ),
       );
     } finally {
-      if (requestId === requestIdRef.current) {
+      if (requestId === requestIdRef.current && !hasDataRef.current) {
         setLoading(false);
       }
     }
