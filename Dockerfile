@@ -42,7 +42,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/landing/public ./apps/landin
 
 USER nextjs
 
-ARG PORT=3000
+ARG PORT="127.0.0.1:3000:3000"
 ENV PORT=${PORT}
 ENV HOSTNAME=0.0.0.0
 EXPOSE ${PORT}
