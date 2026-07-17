@@ -26,7 +26,7 @@ permissions:
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/frontend-landing
   # Compose project directory on the VPC host
-  REMOTE_APP_DIR: ${{ vars.REMOTE_APP_DIR || '/opt/frontend-landing' }}
+  REMOTE_APP_DIR: ${{ vars.REMOTE_APP_DIR || '/srv/projects/frontend-landing' }}
 
 jobs:
   build-and-push:
@@ -103,24 +103,33 @@ jobs:
             APP_DIR="${{ env.REMOTE_APP_DIR }}"
             IMAGE="${{ needs.build-and-push.outputs.image }}"
 
+            if docker info >/dev/null 2>&1; then
+              DOCKER="docker"
+            else
+              DOCKER="sudo docker"
+            fi
+
             echo "Deploying ${IMAGE} in ${APP_DIR}"
             cd "${APP_DIR}"
 
             if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
-              echo "${GHCR_PULL_TOKEN}" | docker login ghcr.io -u "${GHCR_PULL_USER:-${{ github.repository_owner }}}" --password-stdin
+              echo "${GHCR_PULL_TOKEN}" | ${DOCKER} login ghcr.io -u "${GHCR_PULL_USER:-${{ github.repository_owner }}}" --password-stdin
             fi
 
             export LANDING_IMAGE="${IMAGE}"
             export NEXT_PUBLIC_CELL_NAME="${{ vars.NEXT_PUBLIC_CELL_NAME || 'msb' }}"
             export NEXT_PUBLIC_APK_URL="${{ vars.NEXT_PUBLIC_APK_URL || '' }}"
+            # Never pass host port mappings into PORT
+            export PORT=3000
+            export HOSTNAME=0.0.0.0
 
-            docker compose pull landing
-            docker compose up -d --no-build landing
+            ${DOCKER} compose pull landing
+            ${DOCKER} compose up -d --no-build landing
 
             sleep 3
             curl -fsS -o /dev/null -I "http://127.0.0.1:3000" || {
               echo "Smoke check failed on localhost:3000"
-              docker compose logs --tail=80 landing
+              ${DOCKER} compose logs --tail=80 landing
               exit 1
             }
 
