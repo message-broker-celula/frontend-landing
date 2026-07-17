@@ -94,14 +94,23 @@ export function useProvisioning(): UseProvisioningResult {
           if (!activeRef.current) {
             return;
           }
-          setPhase("error");
-          setError(
-            getErrorMessage(
-              pollError,
-              "No se pudo consultar el estado del aprovisionamiento.",
-            ),
-          );
-          return;
+
+          // 🛡️ MEJORA ANTI-QA: Si el backend nos bloquea por Rate Limiting (429),
+          // no mostramos error fatal. Simplemente dejamos que el ciclo continúe 
+          // y vuelva a preguntar en 2.5s.
+          if (pollError instanceof ApiError && pollError.status === 429) {
+            // Silenciamos el error de rate limiting para no asustar al usuario
+            // y dejamos que el flujo llegue al setTimeout de abajo.
+          } else {
+            setPhase("error");
+            setError(
+              getErrorMessage(
+                pollError,
+                "No se pudo consultar el estado del aprovisionamiento.",
+              ),
+            );
+            return;
+          }
         }
 
         await new Promise((resolve) => {

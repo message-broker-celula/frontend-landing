@@ -20,6 +20,13 @@ async function parseError(response: Response): Promise<ApiError> {
   let message = `Error ${response.status}`;
   let code: string | undefined;
 
+  // 🛡️ Manejo específico para Rate Limiting (429)
+  if (response.status === 429) {
+    message = "Has realizado demasiadas peticiones. Por favor, espera unos minutos antes de intentar de nuevo.";
+    code = "RATE_LIMIT_EXCEEDED";
+    return new ApiError(message, response.status, code);
+  }
+
   try {
     const data = (await response.json()) as ApiErrorBody;
     message = data.message ?? data.error ?? message;
