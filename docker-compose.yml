@@ -1,10 +1,11 @@
 services:
   landing:
+    image: ${LANDING_IMAGE:-frontend-landing:local}
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_CELL_NAME: ${NEXT_PUBLIC_CELL_NAME:-mbro}
+        NEXT_PUBLIC_CELL_NAME: ${NEXT_PUBLIC_CELL_NAME:-msb}
         NEXT_PUBLIC_APK_URL: ${NEXT_PUBLIC_APK_URL:-}
 
     container_name: landing
@@ -12,4 +13,5 @@ services:
     restart: unless-stopped
 
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
+  
