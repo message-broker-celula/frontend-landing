@@ -45,6 +45,6 @@ USER nextjs
 ARG PORT="127.0.0.1:3000:3000"
 ENV PORT=${PORT}
 ENV HOSTNAME=0.0.0.0
-EXPOSE ${PORT}
+EXPOSE 3000
 
 CMD ["node", "apps/landing/server.js"]
