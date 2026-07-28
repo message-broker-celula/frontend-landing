@@ -50,8 +50,8 @@ jobs:
       - name: Conectarse por SSH y desplegar
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          host: ${{ secrets.SSH_VPS }}
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PEDRITO }}
           port: 22
           script: |
