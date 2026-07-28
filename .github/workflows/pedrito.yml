@@ -52,7 +52,7 @@ jobs:
         with:
           host: 204.168.214.142
           username: root
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.SSH_PEDRITO }}
           port: 22
           script: |
             echo "Conexión exitosa al VPS"
