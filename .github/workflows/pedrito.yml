@@ -43,25 +43,26 @@ jobs:
           docker push ghcr.io/${{ github.repository }}:latest
 
   deploy:
+    name: Desplegar en el VPS
     needs: build-and-push
     runs-on: ubuntu-latest
-    environment: production
     steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v0.1.9
+      - name: Conectarse por SSH y desplegar
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 46.224.97.85
-          username: Back
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PEDRITO }}
           port: 22
           script: |
-            echo "Conexión exitosa al VPS"
+            set -e
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker pull ghcr.io/${{ github.repository_owner }}/frontend-landing:latest
 
-            docker login ghcr.io -u "FernandaHiguita" ${{ secrets.TOKEN}} 
-            docker pull ghcr.io/${{ github.repository }}:latest
-            docker stop ${{github.event.repository.name}} || true
-            docker rm ${{github.event.repository.name}} || true
+            # Ajusta esta ruta a donde tengas tu docker-compose.yml real en el VPS
+            cd /opt/frontend-landing
 
-            docker run -d --name ${{ github.event.repository.name }} \
-                         -p 8080:8080 \
+            docker compose up -d --no-deps --force-recreate frontend
+            docker image prune -f
+            echo "Despliegue completado: $(date)"
                          ghcr.io/${{ github.repository }}:latest
