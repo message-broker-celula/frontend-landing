@@ -50,14 +50,14 @@ jobs:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.9
         with:
-          host: 204.168.214.142
-          username: root
+          host: 46.224.97.85
+          username: back
           key: ${{ secrets.SSH_PEDRITO }}
           port: 22
           script: |
             echo "Conexión exitosa al VPS"
 
-            docker login ghcr.io -u "andrescortesdev" -p ${{ secrets.TOKEN}} 
+            docker login ghcr.io -u "FernandaHiguita" -p ${{ secrets.TOKEN}} 
             docker pull ghcr.io/${{ github.repository }}:latest
             docker stop ${{github.event.repository.name}} || true
             docker rm ${{github.event.repository.name}} || true
