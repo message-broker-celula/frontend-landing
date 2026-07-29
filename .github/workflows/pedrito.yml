@@ -15,13 +15,13 @@ jobs:
     environment: production
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2  # Configurar el soporte para Buildx, que permite construir imágenes de manera optimizada
+        uses: docker/setup-buildx-action@v3
 
       - name: Cache Docker layers
-        uses: actions/cache@v4  # Habilitar el caching para las capas de Docker y evitar que se reconstruyan siempre
+        uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -29,7 +29,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2  # Hacer login en GHCR usando las credenciales de GitHub
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -37,12 +37,10 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          # Construir la imagen Docker usando el Dockerfile
           docker build -f Dockerfile -t ghcr.io/${{ github.repository }}:latest .
-          # Subir la imagen construida a GHCR
           docker push ghcr.io/${{ github.repository }}:latest
 
-deploy:
+  deploy:
     name: Desplegar en el VPS
     needs: build-and-push
     runs-on: ubuntu-latest
