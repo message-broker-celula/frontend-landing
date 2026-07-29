@@ -42,26 +42,26 @@ jobs:
           # Subir la imagen construida a GHCR
           docker push ghcr.io/${{ github.repository }}:latest
 
-deploy:
-    name: Desplegar en el VPS
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Conectarse por SSH y desplegar
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_VPS }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PEDRITO }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}  
-          port: 22
-          script: |
-            set -e
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ghcr.io/${{ github.repository }}:latest
-            
-            # Agregamos 'cd' para que pueda cambiar al directorio correctamente
-            cd /home/Back/frontend-landing
-            docker compose up -d --no-deps --force-recreate frontend
-            docker image prune -f
-            echo "Despliegue completado: $(date)"
+  deploy:
+      name: Desplegar en el VPS
+      needs: build-and-push
+      runs-on: ubuntu-latest
+      steps:
+        - name: Conectarse por SSH y desplegar
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host: ${{ secrets.SSH_VPS }}
+            username: ${{ secrets.SSH_USER }}
+            key: ${{ secrets.SSH_PEDRITO }}
+            passphrase: ${{ secrets.SSH_PASSPHRASE }}  
+            port: 22
+            script: |
+              set -e
+              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+              docker pull ghcr.io/${{ github.repository }}:latest
+              
+              # Agregamos 'cd' para que pueda cambiar al directorio correctamente
+              cd /home/Back/frontend-landing
+              docker compose up -d --no-deps --force-recreate frontend
+              docker image prune -f
+              echo "Despliegue completado: $(date)"
