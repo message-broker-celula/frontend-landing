@@ -42,7 +42,7 @@ jobs:
           # Subir la imagen construida a GHCR
           docker push ghcr.io/${{ github.repository }}:latest
 
-  deploy:
+deploy:
     name: Desplegar en el VPS
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -53,13 +53,15 @@ jobs:
           host: ${{ secrets.SSH_VPS }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PEDRITO }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}  
           port: 22
           script: |
             set -e
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ghcr.io/${{ github.repository }}:latest
-            # Ajusta esta ruta a donde tengas tu docker-compose.yml real en el VPS
-            /home/Back/frontend-landing
+            
+            # Agregamos 'cd' para que pueda cambiar al directorio correctamente
+            cd /home/Back/frontend-landing
             docker compose up -d --no-deps --force-recreate frontend
             docker image prune -f
             echo "Despliegue completado: $(date)"
