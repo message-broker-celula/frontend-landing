@@ -5,49 +5,102 @@ on:
     branches:
       - main
 
+# Permisos necesarios: leer el repo y escribir paquetes en GHCR
 permissions:
-  packages: write
   contents: read
+  packages: write
 
 jobs:
-  build-and-push:
+  # ============================================
+  # CI: Verificar que el código compila y pasa lint
+  # ============================================
+  ci:
+    name: Verificar código
     runs-on: ubuntu-latest
-    environment: production
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2  # Configurar el soporte para Buildx, que permite construir imágenes de manera optimizada
-
-      - name: Cache Docker layers
-        uses: actions/cache@v4  # Habilitar el caching para las capas de Docker y evitar que se reconstruyan siempre
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+          node-version: 24
+          cache: npm
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2  # Hacer login en GHCR usando las credenciales de GitHub
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit --project apps/landing/tsconfig.json
+
+      - name: Build (verificar que compila)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_CELL_NAME: msb
+          NEXT_PUBLIC_APK_URL: ""
+
+  # ============================================
+  # CD: Construir imagen y subirla a GHCR
+  # ============================================
+  build-and-push:
+    name: Construir y subir imagen
+    needs: ci
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Docker metadata para generar tags automáticos
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            # Tag con el SHA corto (ej: abc1234)
+            type=sha,prefix=
+            # Tag "latest" siempre
+            type=raw,value=latest
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        run: |
-          # Construir la imagen Docker usando el Dockerfile
-          docker build -f Dockerfile -t ghcr.io/${{ github.repository }}:latest .
-          # Subir la imagen construida a GHCR
-          docker push ghcr.io/${{ github.repository }}:latest
+      # Construir Y subir en un solo paso, usando Buildx con cache
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            NEXT_PUBLIC_CELL_NAME=msb
+            NEXT_PUBLIC_APK_URL=
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+  # ============================================
+  # CD: Desplegar en el VPS por SSH
+  # ============================================
   deploy:
-    name: Desplegar en el VPS
+    name: Desplegar en VPS
     needs: build-and-push
     runs-on: ubuntu-latest
+    environment: production
     steps:
-      - name: Conectarse por SSH y desplegar
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_VPS }}
@@ -56,10 +109,24 @@ jobs:
           port: 22
           script: |
             set -e
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Login a GHCR con PAT (el GITHUB_TOKEN del workflow no es confiable aquí)
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
+
+            # Pull de la imagen recién subida
             docker pull ghcr.io/${{ github.repository }}:latest
-            # Ajusta esta ruta a donde tengas tu docker-compose.yml real en el VPS
+
+            # Ir al directorio del proyecto
             cd /opt/frontend-landing
-            docker compose up -d --no-deps --force-recreate frontend
+
+            # Setear LANDING_IMAGE para que docker compose use la imagen de GHCR
+            # y no intente hacer build local
+            export LANDING_IMAGE=ghcr.io/${{ github.repository }}:latest
+
+            # Levantar el servicio con la nueva imagen
+            docker compose up -d --no-deps --force-recreate landing
+
+            # Limpiar imágenes viejas
             docker image prune -f
-            echo "Despliegue completado: $(date)"
+
+            echo "✅ Despliegue completado: $(date)"

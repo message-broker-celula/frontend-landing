@@ -18,8 +18,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json /app/package-lock.json ./
 COPY . .
 
-# NEXT_PUBLIC_* vars are inlined at build time, not read at runtime —
-# they must be passed as build args (docker build --build-arg ...).
 ARG NEXT_PUBLIC_CELL_NAME=msb
 ARG NEXT_PUBLIC_APK_URL=
 ENV NEXT_PUBLIC_CELL_NAME=${NEXT_PUBLIC_CELL_NAME}
@@ -42,7 +40,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/landing/public ./apps/landin
 
 USER nextjs
 
-ARG PORT="127.0.0.1:3000:3000"
+# CORREGIDO: solo el número de puerto, no el mapping
+ARG PORT=3000
 ENV PORT=${PORT}
 ENV HOSTNAME=0.0.0.0
 EXPOSE 3000
