@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+
 permissions:
   packages: write
   contents: read
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -20,7 +22,6 @@ jobs:
 
       - name: Cache Docker layers
         uses: actions/cache@v4  # Habilitar el caching para las capas de Docker y evitar que se reconstruyan siempre
-
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -32,13 +33,12 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }} 
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
         run: |
           # Construir la imagen Docker usando el Dockerfile
           docker build -f Dockerfile -t ghcr.io/${{ github.repository }}:latest .
-
           # Subir la imagen construida a GHCR
           docker push ghcr.io/${{ github.repository }}:latest
 
@@ -57,12 +57,9 @@ jobs:
           script: |
             set -e
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ghcr.io/${{ github.repository_owner }}/frontend-landing:latest
-
+            docker pull ghcr.io/${{ github.repository }}:latest
             # Ajusta esta ruta a donde tengas tu docker-compose.yml real en el VPS
             cd /opt/frontend-landing
-
             docker compose up -d --no-deps --force-recreate frontend
             docker image prune -f
             echo "Despliegue completado: $(date)"
-                         ghcr.io/${{ github.repository }}:latest
