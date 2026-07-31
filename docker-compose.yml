@@ -1,0 +1,15 @@
+services:
+  landing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_CELL_NAME: ${NEXT_PUBLIC_CELL_NAME:-mbro}
+        NEXT_PUBLIC_APK_URL: ${NEXT_PUBLIC_APK_URL:-}
+
+    container_name: landing
+
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
