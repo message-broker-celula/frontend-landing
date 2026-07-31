@@ -59,7 +59,7 @@ jobs:
             export LANDING_IMAGE="ghcr.io/${{ github.repository }}:latest"
             
             docker pull $LANDING_IMAGE
-            cd /home/Back/frontend-landing
+            cd /srv/projects/frontend-landing
             docker compose up -d --no-deps --force-recreate landing
             docker image prune -f
             echo "Despliegue completado con éxito: $(date)"
