@@ -6,6 +6,7 @@ const statusStyles: Record<DatabaseStatus, string> = {
   paused: "bg-series-3/10 text-series-3 border-series-3/20",
   deleted: "bg-muted/20 text-muted border-line",
   error: "bg-series-6/10 text-series-6 border-series-6/20",
+  unknown: "bg-muted/20 text-muted border-line", // <-- AGREGADO
 };
 
 const statusLabels: Record<DatabaseStatus, string> = {
@@ -14,6 +15,7 @@ const statusLabels: Record<DatabaseStatus, string> = {
   paused: "Pausada",
   deleted: "Eliminada",
   error: "Error",
+  unknown: "Desconocido", // <-- AGREGADO
 };
 
 export function StatusBadge({ status }: { status: DatabaseStatus }) {
