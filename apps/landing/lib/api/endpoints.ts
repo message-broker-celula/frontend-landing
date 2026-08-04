@@ -1,69 +1,44 @@
-import { apiRequest } from "@/lib/api/client";
-import { apiUrl } from "@/lib/site-config";
+import { apiRequest } from "./client";
 import type {
-  AuthProvider,
   AuthUser,
-  ProvisioningStatus,
+  DatabaseListResponse,
+  DatabaseCredentials,
+  DatabaseUsage,
+  DatabaseActionResponse,
   PublicMetrics,
-  UserDatabase,
-} from "@/lib/api/types";
+} from "./types";
+
+const BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export const API_PATHS = {
-  metrics: "/api/metrics",
-  me: "/api/me",
-  database: "/api/database",
-  provision: "/api/database/provision",
-  databaseStatus: "/api/database/status",
-  authGoogle: "/api/auth/google",
-  authGithub: "/api/auth/github",
-} as const;
+  metrics: "/metrics",
+  me: "/auth/me",
+  databases: "/databases",
+  googleAuth: "/auth/google",
+  githubAuth: "/auth/github",
+};
 
-export function getOAuthStartUrl(
-  provider: AuthProvider,
-  redirectUri: string,
-): string {
-  const path =
-    provider === "google" ? API_PATHS.authGoogle : API_PATHS.authGithub;
-  const url = new URL(`${apiUrl}${path}`);
-  url.searchParams.set("redirect_uri", redirectUri);
-  return url.toString();
+export function getOAuthStartUrl(provider: "google" | "github") {
+  return `${BASE}${provider === "google" ? API_PATHS.googleAuth : API_PATHS.githubAuth}`;
 }
 
-export function fetchMetrics(signal?: AbortSignal): Promise<PublicMetrics> {
-  return apiRequest<PublicMetrics>(API_PATHS.metrics, { signal });
-}
+// Auth
+export const fetchCurrentUser = (token: string) =>
+  apiRequest<AuthUser>(API_PATHS.me, { token });
 
-export function fetchCurrentUser(
-  token: string,
-  signal?: AbortSignal,
-): Promise<AuthUser> {
-  return apiRequest<AuthUser>(API_PATHS.me, { token, signal });
-}
+// Databases
+export const fetchUserDatabases = (token: string) =>
+  apiRequest<DatabaseListResponse>(API_PATHS.databases, { token });
 
-export function fetchUserDatabase(
-  token: string,
-  signal?: AbortSignal,
-): Promise<UserDatabase> {
-  return apiRequest<UserDatabase>(API_PATHS.database, { token, signal });
-}
+export const provisionDatabase = (token: string) =>
+  apiRequest<DatabaseActionResponse>(API_PATHS.databases, { method: "POST", token });
 
-export function provisionDatabase(
-  token: string,
-  signal?: AbortSignal,
-): Promise<UserDatabase | ProvisioningStatus> {
-  return apiRequest<UserDatabase | ProvisioningStatus>(API_PATHS.provision, {
-    method: "POST",
-    token,
-    signal,
-  });
-}
+export const fetchDatabaseCredentials = (token: string, databaseId: string) =>
+  apiRequest<DatabaseCredentials>(`${API_PATHS.databases}/${databaseId}/credentials`, { token });
 
-export function fetchProvisioningStatus(
-  token: string,
-  signal?: AbortSignal,
-): Promise<ProvisioningStatus> {
-  return apiRequest<ProvisioningStatus>(API_PATHS.databaseStatus, {
-    token,
-    signal,
-  });
-}
+export const fetchDatabaseUsage = (token: string, databaseId: string) =>
+  apiRequest<DatabaseUsage>(`${API_PATHS.databases}/${databaseId}/usage`, { token });
+
+// Metrics (Asumimos que el backend creará este endpoint público)
+export const fetchPublicMetrics = () =>
+  apiRequest<PublicMetrics>(API_PATHS.metrics);

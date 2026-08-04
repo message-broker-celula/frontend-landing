@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, getErrorMessage } from "@/lib/api/errors";
-import { fetchMetrics } from "@/lib/api/endpoints";
+import { fetchPublicMetrics } from "@/lib/api/endpoints"; // <-- CAMBIO AQUÍ
 import type { PublicMetrics } from "@/lib/api/types";
 
 const DEFAULT_REFRESH_MS = 30_000;
@@ -33,7 +33,7 @@ export function useMetrics(
     setError(null);
 
     try {
-      const data = await fetchMetrics();
+      const data = await fetchPublicMetrics(); // <-- CAMBIO AQUÍ
       if (requestId !== requestIdRef.current) {
         return;
       }

@@ -22,8 +22,11 @@ COPY . .
 # they must be passed as build args (docker build --build-arg ...).
 ARG NEXT_PUBLIC_CELL_NAME=msb
 ARG NEXT_PUBLIC_APK_URL=
+ARG NEXT_PUBLIC_API_URL=
+
 ENV NEXT_PUBLIC_CELL_NAME=${NEXT_PUBLIC_CELL_NAME}
 ENV NEXT_PUBLIC_APK_URL=${NEXT_PUBLIC_APK_URL}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN npm run build --workspace=landing
 

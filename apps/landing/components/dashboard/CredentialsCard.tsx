@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import type { UserDatabase } from "@/lib/api/types";
+import type { DatabaseInstance, DatabaseCredentials } from "@/lib/api/types";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { formatDate } from "@/lib/format";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -51,7 +51,14 @@ function CredentialRow({
   );
 }
 
-export function CredentialsCard({ database }: { database: UserDatabase }) {
+// Actualizamos las props para recibir la instancia y las credenciales por separado
+export function CredentialsCard({
+  database,
+  credentials,
+}: {
+  database: DatabaseInstance;
+  credentials: DatabaseCredentials | null;
+}) {
   return (
     <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -69,11 +76,12 @@ export function CredentialsCard({ database }: { database: UserDatabase }) {
       <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
         <div className="rounded-xl border border-line bg-background/60 px-3 py-2">
           <p className="text-xs text-muted">Motor</p>
-          <p className="mt-1 font-medium">{database.engine}</p>
+          {/* Asumimos SQL Server basado en la documentación del proyecto */}
+          <p className="mt-1 font-medium">SQL Server</p> 
         </div>
         <div className="rounded-xl border border-line bg-background/60 px-3 py-2">
           <p className="text-xs text-muted">Creación</p>
-          <p className="mt-1 font-medium">{formatDate(database.createdAt)}</p>
+          <p className="mt-1 font-medium">{formatDate(database.created_at)}</p>
         </div>
         <div className="rounded-xl border border-line bg-background/60 px-3 py-2">
           <p className="text-xs text-muted">Estado</p>
@@ -82,11 +90,11 @@ export function CredentialsCard({ database }: { database: UserDatabase }) {
       </div>
 
       <div className="mt-2">
-        <CredentialRow label="Host" value={database.host} />
-        <CredentialRow label="Puerto" value={String(database.port)} />
-        <CredentialRow label="Base de datos" value={database.databaseName} />
-        <CredentialRow label="Usuario" value={database.username} />
-        <CredentialRow label="Contraseña" value={database.password} secret />
+        <CredentialRow label="Host" value={credentials?.host || "N/A"} />
+        <CredentialRow label="Puerto" value={String(credentials?.port || "N/A")} />
+        <CredentialRow label="Base de datos" value={credentials?.database_name || "N/A"} />
+        <CredentialRow label="Usuario" value={credentials?.username || "N/A"} />
+        <CredentialRow label="Contraseña" value={credentials?.password || "N/A"} secret />
       </div>
     </section>
   );

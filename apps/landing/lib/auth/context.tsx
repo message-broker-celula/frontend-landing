@@ -10,8 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import { ApiError, getErrorMessage } from "@/lib/api/errors";
-import { fetchCurrentUser, fetchUserDatabase } from "@/lib/api/endpoints";
-import type { AuthUser, UserDatabase } from "@/lib/api/types";
+import { fetchCurrentUser, fetchUserDatabases } from "@/lib/api/endpoints";
+import type { AuthUser, DatabaseInstance, DatabaseListResponse } from "@/lib/api/types";
 import {
   clearStoredToken,
   getStoredToken,
@@ -22,14 +22,14 @@ type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 interface SessionSnapshot {
   user: AuthUser;
-  database: UserDatabase | null;
+  database: DatabaseInstance | null;
   needsProvisioning: boolean;
 }
 
 interface AuthContextValue {
   status: AuthStatus;
   user: AuthUser | null;
-  database: UserDatabase | null;
+  database: DatabaseInstance | null; // Cambiado a DatabaseInstance
   token: string | null;
   error: string | null;
   needsProvisioning: boolean;
@@ -42,13 +42,14 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function isMissingDatabase(error: unknown): boolean {
+  // Si el backend devuelve 404 o una lista vacía
   return error instanceof ApiError && (error.status === 404 || error.status === 204);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [database, setDatabase] = useState<UserDatabase | null>(null);
+  const [database, setDatabase] = useState<DatabaseInstance | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,10 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const nextUser = await fetchCurrentUser(accessToken);
-        let nextDatabase: UserDatabase | null = null;
+        let nextDatabase: DatabaseInstance | null = null;
 
         try {
-          nextDatabase = await fetchUserDatabase(accessToken);
+          // Obtenemos la lista de bases de datos del usuario
+          const dbListResponse: DatabaseListResponse = await fetchUserDatabases(accessToken);
+          if (dbListResponse.databases && dbListResponse.databases.length > 0) {
+            // Tomamos la primera base de datos de la lista
+            nextDatabase = dbListResponse.databases[0];
+          }
         } catch (databaseError) {
           if (!isMissingDatabase(databaseError)) {
             throw databaseError;
@@ -77,10 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const snapshot: SessionSnapshot = {
           user: nextUser,
           database: nextDatabase,
-          needsProvisioning:
-            !nextDatabase ||
-            nextDatabase.status === "provisioning" ||
-            nextDatabase.status === "error",
+          needsProvisioning: !nextDatabase || nextDatabase.status === "error",
         };
 
         setStoredToken(accessToken);
@@ -174,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     }
 
-    return database.status === "provisioning" || database.status === "error";
+    return database.status === "error";
   }, [database, status]);
 
   const value = useMemo<AuthContextValue>(

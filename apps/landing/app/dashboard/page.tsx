@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -10,17 +10,25 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import Link from "next/link";
+import { fetchDatabaseCredentials, fetchDatabaseUsage } from "@/lib/api/endpoints";
+import type { DatabaseCredentials, DatabaseUsage } from "@/lib/api/types";
 
 export default function DashboardPage() {
   const router = useRouter();
   const {
     status,
     database,
+    token,
     needsProvisioning,
     error,
     refreshSession,
     clearError,
   } = useAuth();
+
+  // Estados locales para guardar las credenciales y el uso
+  const [credentials, setCredentials] = useState<DatabaseCredentials | null>(null);
+  const [usage, setUsage] = useState<DatabaseUsage | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -32,6 +40,36 @@ export default function DashboardPage() {
       router.replace("/provision");
     }
   }, [needsProvisioning, router, status]);
+
+  // Efecto para cargar credenciales y uso cuando hay una base de datos
+  useEffect(() => {
+    if (!token || !database) return;
+
+    let cancelled = false;
+    const loadDetails = async () => {
+      setIsLoadingDetails(true);
+      try {
+        const [creds, use] = await Promise.all([
+          fetchDatabaseCredentials(token, database.database_id),
+          fetchDatabaseUsage(token, database.database_id),
+        ]);
+        if (!cancelled) {
+          setCredentials(creds);
+          setUsage(use);
+        }
+      } catch (err) {
+        console.error("Error fetching database details:", err);
+      } finally {
+        if (!cancelled) setIsLoadingDetails(false);
+      }
+    };
+
+    loadDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, database]);
 
   if (status === "loading" || status === "unauthenticated") {
     return (
@@ -82,8 +120,23 @@ export default function DashboardPage() {
           </Alert>
         ) : null}
 
-        <CredentialsCard database={database} />
-        <StorageMonitor database={database} />
+        {isLoadingDetails ? (
+          <div className="flex items-center justify-center gap-3 py-10 text-secondary">
+            <Spinner />
+            Obteniendo credenciales…
+          </div>
+        ) : (
+          <>
+            <CredentialsCard 
+              database={database} 
+              credentials={credentials} 
+            />
+            <StorageMonitor 
+              database={database} 
+              usage={usage} 
+            />
+          </>
+        )}
 
         <div className="rounded-2xl border border-line bg-surface px-5 py-4 text-sm text-secondary">
           ¿Necesitas la documentación de la API?{" "}
