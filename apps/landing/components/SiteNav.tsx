@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Database } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
-import { siteConfig } from "@/lib/site-config";
 import { Spinner } from "@/components/ui/Spinner";
+import { Logo } from "@/components/Logo"; // <-- Importamos nuestro logo
 
 export default function SiteNav() {
   const { status, needsProvisioning } = useAuth();
@@ -28,12 +27,9 @@ export default function SiteNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-line/60 bg-background/75 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
-        <Link href="/#top" className="group flex items-center gap-2 font-medium">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-series-5 to-series-2 text-white shadow-md shadow-series-5/25">
-            <Database size={16} strokeWidth={2.5} />
-          </span>
-          <span className="text-sm sm:text-base">{siteConfig.cellName}</span>
-        </Link>
+        
+        {/* Aquí insertamos nuestro componente de Logo personalizado */}
+        <Logo className="text-sm sm:text-base" />
 
         <nav className="flex items-center gap-2 sm:gap-3">
           <Link
