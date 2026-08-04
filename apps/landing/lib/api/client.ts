@@ -18,24 +18,22 @@ function resolveUrl(path: string): string {
 
 async function parseError(response: Response): Promise<ApiError> {
   let message = `Error ${response.status}`;
-  let code: string | undefined;
 
   // 🛡️ Manejo específico para Rate Limiting (429)
   if (response.status === 429) {
     message = "Has realizado demasiadas peticiones. Por favor, espera unos minutos antes de intentar de nuevo.";
-    code = "RATE_LIMIT_EXCEEDED";
-    return new ApiError(message, response.status, code);
+    return new ApiError(message, response.status, "RATE_LIMIT_EXCEEDED");
   }
 
   try {
     const data = (await response.json()) as ApiErrorBody;
-    message = data.message ?? data.error ?? message;
-    code = data.code;
+    // El backend devuelve { "detail": "mensaje" }
+    message = data.detail ?? message; 
   } catch {
     // Response body is not JSON; keep the status-based message.
   }
 
-  return new ApiError(message, response.status, code);
+  return new ApiError(message, response.status);
 }
 
 export async function apiRequest<T>(
