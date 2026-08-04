@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, getErrorMessage } from "@/lib/api/errors";
 import {
-  fetchProvisioningStatus,
-  fetchUserDatabase,
+  fetchUserDatabases,
   provisionDatabase,
 } from "@/lib/api/endpoints";
-import type { DatabaseStatus, UserDatabase } from "@/lib/api/types";
+import type { DatabaseStatus, DatabaseInstance } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/context";
 
 const POLL_INTERVAL_MS = 2_500;
@@ -18,15 +17,9 @@ interface UseProvisioningResult {
   phase: ProvisionPhase;
   status: DatabaseStatus | null;
   message: string | null;
-  database: UserDatabase | null;
+  database: DatabaseInstance | null;
   error: string | null;
   start: () => Promise<void>;
-}
-
-function hasCredentials(
-  value: UserDatabase | { status: DatabaseStatus },
-): value is UserDatabase {
-  return "host" in value && "databaseName" in value;
 }
 
 export function useProvisioning(): UseProvisioningResult {
@@ -36,7 +29,7 @@ export function useProvisioning(): UseProvisioningResult {
     sessionDatabase?.status ?? null,
   );
   const [message, setMessage] = useState<string | null>(null);
-  const [database, setDatabase] = useState<UserDatabase | null>(sessionDatabase);
+  const [database, setDatabase] = useState<DatabaseInstance | null>(sessionDatabase);
   const [error, setError] = useState<string | null>(null);
   const startedRef = useRef(false);
   const activeRef = useRef(true);
@@ -49,7 +42,7 @@ export function useProvisioning(): UseProvisioningResult {
   }, []);
 
   const finishSuccess = useCallback(
-    async (nextDatabase: UserDatabase) => {
+    async (nextDatabase: DatabaseInstance) => {
       if (!activeRef.current) {
         return;
       }
@@ -68,40 +61,37 @@ export function useProvisioning(): UseProvisioningResult {
 
       while (activeRef.current) {
         try {
-          const current = await fetchProvisioningStatus(accessToken);
+          // Consultamos la lista de bases de datos para ver el estado actual
+          const response = await fetchUserDatabases(accessToken);
           if (!activeRef.current) {
             return;
           }
 
-          setStatus(current.status);
-          setMessage(current.message ?? null);
+          const currentDb = response.databases?.[0] || null;
 
-          if (current.status === "active") {
-            const ready = await fetchUserDatabase(accessToken);
-            await finishSuccess(ready);
-            return;
-          }
+          if (currentDb) {
+            setStatus(currentDb.status);
 
-          if (current.status === "error" || current.status === "deleted") {
-            setPhase("error");
-            setError(
-              current.message ??
-                "El aprovisionamiento falló. Inténtalo de nuevo más tarde.",
-            );
-            return;
+            if (currentDb.status === "active") {
+              await finishSuccess(currentDb);
+              return;
+            }
+
+            if (currentDb.status === "error" || currentDb.status === "deleted") {
+              setPhase("error");
+              setError(
+                "El aprovisionamiento falló o la base de datos fue eliminada. Inténtalo de nuevo.",
+              );
+              return;
+            }
           }
         } catch (pollError) {
           if (!activeRef.current) {
             return;
           }
 
-          // 🛡️ MEJORA ANTI-QA: Si el backend nos bloquea por Rate Limiting (429),
-          // no mostramos error fatal. Simplemente dejamos que el ciclo continúe 
-          // y vuelva a preguntar en 2.5s.
-          if (pollError instanceof ApiError && pollError.status === 429) {
-            // Silenciamos el error de rate limiting para no asustar al usuario
-            // y dejamos que el flujo llegue al setTimeout de abajo.
-          } else {
+          // 🛡️ MEJORA ANTI-QA: Silenciamos el rate limiting (429)
+          if (!(pollError instanceof ApiError && pollError.status === 429)) {
             setPhase("error");
             setError(
               getErrorMessage(
@@ -113,6 +103,7 @@ export function useProvisioning(): UseProvisioningResult {
           }
         }
 
+        // Esperamos 2.5s antes de la siguiente verificación
         await new Promise((resolve) => {
           window.setTimeout(resolve, POLL_INTERVAL_MS);
         });
@@ -131,35 +122,33 @@ export function useProvisioning(): UseProvisioningResult {
     setPhase("starting");
 
     try {
+      // Si la sesión ya dice que está activa, terminamos
       if (sessionDatabase?.status === "active") {
         await finishSuccess(sessionDatabase);
         return;
       }
 
-      if (sessionDatabase?.status === "provisioning") {
+      // Si ya está en provisión, solo poleamos
+      if (sessionDatabase?.status === "provisioning" || sessionDatabase?.status === "unknown") {
         await pollUntilReady(token);
         return;
       }
 
-      const result = await provisionDatabase(token);
+      // Disparamos la creación de la base de datos
+      await provisionDatabase(token);
 
       if (!activeRef.current) {
         return;
       }
 
-      if (hasCredentials(result) && result.status === "active") {
-        await finishSuccess(result);
-        return;
-      }
-
-      setStatus(result.status);
+      // Empezamos a polear para saber cuándo termina
       await pollUntilReady(token);
     } catch (startError) {
       if (!activeRef.current) {
         return;
       }
 
-      // Idempotent backends may return 409 when provisioning already started.
+      // Si el backend dice que ya se estaba creando (409), solo poleamos
       if (startError instanceof ApiError && startError.status === 409) {
         await pollUntilReady(token);
         return;
