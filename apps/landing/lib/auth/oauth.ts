@@ -10,6 +10,7 @@ export function getAuthCallbackUrl(): string {
 }
 
 export function startOAuth(provider: AuthProvider): void {
-  const redirectUri = getAuthCallbackUrl();
-  window.location.assign(getOAuthStartUrl(provider, redirectUri));
+  // El backend ya tiene configurada la URL de redirección, 
+  // por lo que no necesitamos enviarla desde aquí.
+  window.location.assign(getOAuthStartUrl(provider));
 }
