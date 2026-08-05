@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Database } from "lucide-react";
 import { AuthButtons } from "@/components/auth/AuthButtons";
 import { useAuth } from "@/lib/auth/context";
-import { siteConfig } from "@/lib/site-config";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
+import { Logo } from "@/components/Logo"; // <-- Importamos nuestro logo
 
 type AuthTab = "login" | "register";
 
@@ -66,15 +65,10 @@ export default function LoginView() {
       </div>
 
       <div className="relative w-full max-w-md">
-        <Link
-          href="/"
-          className="mb-8 flex items-center justify-center gap-2 font-medium"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-series-5 to-series-2 text-white shadow-md shadow-series-5/30">
-            <Database size={18} strokeWidth={2.5} />
-          </span>
-          <span>{siteConfig.cellName}</span>
-        </Link>
+        {/* Aquí insertamos nuestro componente de Logo personalizado */}
+        <div className="mb-8 flex justify-center">
+          <Logo />
+        </div>
 
         <div className="rounded-3xl border border-line bg-surface/90 p-6 shadow-xl backdrop-blur sm:p-8">
           <div className="mb-6 grid grid-cols-2 gap-1 rounded-full border border-line bg-background/70 p-1">
