@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Trash2, Plus, CopyButton } from "lucide-react"; // Asumiendo que tienes CopyButton, si no, usa un botón normal
+import { Globe, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 
