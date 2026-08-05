@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { CredentialsCard } from "@/components/dashboard/CredentialsCard";
 import { StorageMonitor } from "@/components/dashboard/StorageMonitor";
+import { DnsView } from "@/components/dashboard/DnsView";
+import { AiView } from "@/components/dashboard/AiView";
+import { N8nView } from "@/components/dashboard/N8nView"; // <-- Importamos la nueva vista
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -184,19 +187,19 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* VISTA: N8N, IA, DNS (Placeholders para el Entregable 3) */}
-          {activeView !== "database" && (
-            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-surface/30 p-8 text-center">
-              <div className="mb-4 rounded-full bg-accent/10 p-4">
-                {activeView === "n8n" && <Workflow size={32} className="text-accent" />}
-                {activeView === "ai" && <Sparkles size={32} className="text-accent" />}
-                {activeView === "dns" && <Globe size={32} className="text-accent" />}
-              </div>
-              <h3 className="text-xl font-semibold">Próximamente</h3>
-              <p className="mt-2 max-w-sm text-sm text-secondary">
-                Esta sección está en desarrollo para el Entregable 3. Próximamente podrás gestionar este servicio desde aquí.
-              </p>
-            </div>
+          {/* VISTA: DNS */}
+          {activeView === "dns" && (
+            <DnsView />
+          )}
+
+          {/* VISTA: IA */}
+          {activeView === "ai" && (
+            <AiView />
+          )}
+
+          {/* VISTA: N8N */}
+          {activeView === "n8n" && (
+            <N8nView />
           )}
 
           <div className="rounded-2xl border border-line bg-surface px-5 py-4 text-sm text-secondary">
