@@ -85,6 +85,12 @@ export function AuthButtons({
     setError(null);
     setLoadingProvider(provider);
 
+    // 🛡️ Fix: Si la redirección falla (ej. DNS caído), el navegador no se va de la página.
+    // Damos 1.5s de margen y luego liberamos el botón para que no quede cargando infinitamente.
+    window.setTimeout(() => {
+      setLoadingProvider(null);
+    }, 1500);
+
     try {
       startOAuth(provider);
     } catch (signInError) {
