@@ -39,6 +39,11 @@ function AuthCallbackContent() {
 
     startedRef.current = true;
 
+    // 🛡️ Seguridad: Sacamos el token de la URL visible inmediatamente
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
     void signInWithToken(accessToken)
       .then((session) => {
         router.replace(session.needsProvisioning ? "/provision" : "/dashboard");

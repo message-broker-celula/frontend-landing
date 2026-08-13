@@ -1,6 +1,8 @@
 import { apiUrl } from "@/lib/site-config";
 import { ApiError } from "@/lib/api/errors";
 import type { ApiErrorBody } from "@/lib/api/types";
+import { refreshAuthToken } from "@/lib/api/endpoints";
+import { clearStoredToken, setStoredToken } from "@/lib/auth/storage";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -9,6 +11,7 @@ interface RequestOptions {
   token?: string | null;
   body?: unknown;
   signal?: AbortSignal;
+  _isRetry?: boolean; // Flag para evitar loops infinitos de retry
 }
 
 function resolveUrl(path: string): string {
@@ -19,7 +22,6 @@ function resolveUrl(path: string): string {
 async function parseError(response: Response): Promise<ApiError> {
   let message = `Error ${response.status}`;
 
-  // 🛡️ Manejo específico para Rate Limiting (429)
   if (response.status === 429) {
     message = "Has realizado demasiadas peticiones. Por favor, espera unos minutos antes de intentar de nuevo.";
     return new ApiError(message, response.status, "RATE_LIMIT_EXCEEDED");
@@ -27,10 +29,9 @@ async function parseError(response: Response): Promise<ApiError> {
 
   try {
     const data = (await response.json()) as ApiErrorBody;
-    // El backend devuelve { "detail": "mensaje" }
     message = data.detail ?? message; 
   } catch {
-    // Response body is not JSON; keep the status-based message.
+    // Response body is not JSON
   }
 
   return new ApiError(message, response.status);
@@ -61,6 +62,7 @@ export async function apiRequest<T>(
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: options.signal,
       cache: "no-store",
+      credentials: "include", // <-- IMPORTANTE: Envía la cookie del refresh token
     });
   } catch {
     throw new ApiError(
@@ -68,6 +70,27 @@ export async function apiRequest<T>(
       0,
       "NETWORK_ERROR",
     );
+  }
+
+  // 🛡️ INTERCEPTOR DE RENOVIACIÓN DE TOKEN
+  // Si da 401 y no es un retry ya, intentamos refrescar el token
+  if (response.status === 401 && !options._isRetry && options.token) {
+    try {
+      const newAuth = await refreshAuthToken();
+      setStoredToken(newAuth.access_token);
+      
+      // Repetimos la petición original con el nuevo token
+      return apiRequest<T>(path, {
+        ...options,
+        token: newAuth.access_token,
+        _isRetry: true, // Marcamos que ya intentamos renovar
+      });
+    } catch (refreshError) {
+      // Si el refresh falla (ej. refresh token inválido o expirado), cerramos sesión
+      clearStoredToken();
+      window.location.href = "/login";
+      throw new ApiError("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.", 401);
+    }
   }
 
   if (!response.ok) {

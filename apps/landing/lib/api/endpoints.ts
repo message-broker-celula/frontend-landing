@@ -16,6 +16,7 @@ export const API_PATHS = {
   databases: "/databases",
   googleAuth: "/auth/google",
   githubAuth: "/auth/github",
+  refresh: "/auth/refresh",
 };
 
 export function getOAuthStartUrl(provider: "google" | "github") {
@@ -25,6 +26,13 @@ export function getOAuthStartUrl(provider: "google" | "github") {
 // Auth
 export const fetchCurrentUser = (token: string) =>
   apiRequest<AuthUser>(API_PATHS.me, { token });
+
+// Auth Refresh
+export const refreshAuthToken = () =>
+  apiRequest<{ access_token: string; token_type: string; refresh_token: string }>(
+    API_PATHS.refresh,
+    { method: "POST" }
+  );
 
 // Databases
 export const fetchUserDatabases = (token: string) =>
@@ -39,6 +47,6 @@ export const fetchDatabaseCredentials = (token: string, databaseId: string) =>
 export const fetchDatabaseUsage = (token: string, databaseId: string) =>
   apiRequest<DatabaseUsage>(`${API_PATHS.databases}/${databaseId}/usage`, { token });
 
-// Metrics (Asumimos que el backend creará este endpoint público)
+// Metrics
 export const fetchPublicMetrics = () =>
   apiRequest<PublicMetrics>(API_PATHS.metrics);
