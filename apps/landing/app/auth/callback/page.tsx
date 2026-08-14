@@ -25,8 +25,14 @@ function AuthCallbackContent() {
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
 
   const accessToken = readCallbackToken(searchParams);
+  // error_description is the human-readable Spanish message the backend
+  // generates (e.g. "Ya existe una cuenta con este correo registrada con
+  // otro proveedor..."); error is just the short machine code (e.g.
+  // "business_rule_violation"). Both are always present together on a
+  // callback failure, so prefer the readable one and only fall back to the
+  // code if a description is ever missing.
   const callbackError =
-    searchParams.get("error") ?? searchParams.get("error_description");
+    searchParams.get("error_description") ?? searchParams.get("error");
   const missingTokenError = !accessToken && !callbackError
     ? "No se recibió un token de acceso. Vuelve a iniciar sesión desde la página principal."
     : null;
