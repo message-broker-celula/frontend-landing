@@ -47,6 +47,13 @@ export const fetchDatabaseCredentials = (token: string, databaseId: string) =>
 export const fetchDatabaseUsage = (token: string, databaseId: string) =>
   apiRequest<DatabaseUsage>(`${API_PATHS.databases}/${databaseId}/usage`, { token });
 
+// Pause & Resume
+export const pauseDatabase = (token: string, databaseId: string) =>
+  apiRequest<DatabaseActionResponse>(`${API_PATHS.databases}/${databaseId}/pause`, { method: "POST", token });
+
+export const resumeDatabase = (token: string, databaseId: string) =>
+  apiRequest<DatabaseActionResponse>(`${API_PATHS.databases}/${databaseId}/resume`, { method: "POST", token });
+
 // Metrics
 export const fetchPublicMetrics = () =>
   apiRequest<PublicMetrics>(API_PATHS.metrics);

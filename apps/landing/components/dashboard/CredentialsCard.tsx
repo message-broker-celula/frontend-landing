@@ -1,11 +1,14 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Pause, Play } from "lucide-react";
 import { useState } from "react";
 import type { DatabaseInstance, DatabaseCredentials } from "@/lib/api/types";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { formatDate } from "@/lib/format";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { Button } from "@/components/ui/Button";
+import { pauseDatabase, resumeDatabase } from "@/lib/api/endpoints";
+import { useAuth } from "@/lib/auth/context";
 
 function CredentialRow({
   label,
@@ -58,6 +61,27 @@ export function CredentialsCard({
   database: DatabaseInstance;
   credentials: DatabaseCredentials | null;
 }) {
+  const { token, refreshSession } = useAuth();
+  const [isToggling, setIsToggling] = useState(false);
+
+  const handleToggleState = async () => {
+    if (!token) return;
+    setIsToggling(true);
+    try {
+      if (database.status === "active") {
+        await pauseDatabase(token, database.database_id);
+      } else if (database.status === "paused") {
+        await resumeDatabase(token, database.database_id);
+      }
+      // Refrescamos la sesión para que el estado de la BD se actualice en todo el Dashboard
+      await refreshSession();
+    } catch (err) {
+      console.error("Error al cambiar el estado de la BD:", err);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   return (
     <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -75,7 +99,6 @@ export function CredentialsCard({
       <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
         <div className="rounded-xl border border-line bg-background/60 px-3 py-2">
           <p className="text-xs text-muted">Motor</p>
-          {/* Usamos el motor real devuelto por el backend */}
           <p className="mt-1 font-medium">{database.engine || "N/A"}</p>
         </div>
         <div className="rounded-xl border border-line bg-background/60 px-3 py-2">
@@ -95,6 +118,29 @@ export function CredentialsCard({
         <CredentialRow label="Usuario" value={credentials?.username || "N/A"} />
         <CredentialRow label="Contraseña" value={credentials?.password || "N/A"} secret />
       </div>
+
+      {/* 📌 BOTONES DE PAUSAR / REANUDAR */}
+      {(database.status === "active" || database.status === "paused") && (
+        <div className="mt-6 flex justify-end">
+          <Button 
+            variant="secondary" 
+            onClick={handleToggleState} 
+            disabled={isToggling}
+          >
+            {isToggling ? (
+              "Procesando..."
+            ) : database.status === "active" ? (
+              <>
+                <Pause size={16} className="mr-2" /> Pausar Base de Datos
+              </>
+            ) : (
+              <>
+                <Play size={16} className="mr-2" /> Reanudar Base de Datos
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

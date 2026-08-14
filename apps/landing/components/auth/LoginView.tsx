@@ -107,7 +107,7 @@ export default function LoginView() {
             <p className="mt-2 text-sm text-secondary">
               {tab === "login"
                 ? "Accede con Google o GitHub para gestionar tu base de datos."
-                : "Regístrate con Google o GitHub. Tu base SQL Server se aprovisionará al entrar."}
+                : "Regístrate con Google o GitHub. Tu base de datos se aprovisionará al entrar."}
             </p>
           </div>
 

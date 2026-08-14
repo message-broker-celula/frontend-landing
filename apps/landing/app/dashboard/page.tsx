@@ -7,7 +7,7 @@ import { CredentialsCard } from "@/components/dashboard/CredentialsCard";
 import { StorageMonitor } from "@/components/dashboard/StorageMonitor";
 import { DnsView } from "@/components/dashboard/DnsView";
 import { AiView } from "@/components/dashboard/AiView";
-import { N8nView } from "@/components/dashboard/N8nView"; // <-- Importamos la nueva vista
+import { N8nView } from "@/components/dashboard/N8nView";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -150,7 +150,7 @@ export default function DashboardPage() {
               {activeView === "dns" && "Gestión de Dominios"}
             </h1>
             <p className="mt-2 text-secondary">
-              {activeView === "database" && "Credenciales, estado y monitoreo de tu instancia SQL Server."}
+              {activeView === "database" && "Credenciales, estado y monitoreo de tu base de datos."}
               {activeView === "n8n" && "Crea y gestiona tus flujos de trabajo automatizados."}
               {activeView === "ai" && "Genera API Keys para integrar IA en tus proyectos."}
               {activeView === "dns" && "Crea y administra tus propios subdominios."}
