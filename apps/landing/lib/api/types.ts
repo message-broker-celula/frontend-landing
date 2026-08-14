@@ -94,7 +94,7 @@ export interface ApiKeyStatus {
 
 export interface ApiKeyResponse {
   client_id: number;
-  api_key: string; // Solo se devuelve al crear/rotar
+  api_key: string;
   key_prefix: string;
   base_url: string;
 }
@@ -107,7 +107,7 @@ export interface ApiUsage {
 }
 
 // ==========================================
-// Celulas & DNS Types (Para el DnsView)
+// Celulas & DNS Types
 // ==========================================
 
 export interface Celula {
@@ -137,4 +137,17 @@ export interface CelulaServiceListResponse {
 export interface DnsStatusResponse {
   fqdn: string;
   propagated: boolean;
+}
+
+// ==========================================
+// Database Engines Types (Nuevo)
+// ==========================================
+
+export interface DatabaseEngine {
+  nombre_motor: string;
+  version_motor: string;
+}
+
+export interface DatabaseEnginesResponse {
+  engines: DatabaseEngine[];
 }

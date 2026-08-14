@@ -14,6 +14,7 @@ import type {
   CelulaService,
   CelulaServiceListResponse,
   DnsStatusResponse,
+  DatabaseEnginesResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "";
@@ -51,12 +52,19 @@ export const refreshAuthToken = () =>
 export const fetchUserDatabases = (token: string) =>
   apiRequest<DatabaseListResponse>(API_PATHS.databases, { token });
 
-export const provisionDatabase = (token: string, dbName?: string) =>
+// Actualizado: Ahora recibe el motor, versión y nombre
+export const provisionDatabase = (
+  token: string, 
+  payload: { nombre_motor: string; version_motor: string; nombre_bd: string }
+) =>
   apiRequest<DatabaseActionResponse>(API_PATHS.databases, { 
     method: "POST", 
     token, 
-    body: dbName ? { nombre_bd: dbName } : {} 
+    body: payload 
   });
+
+export const fetchDatabaseEngines = (token: string) =>
+  apiRequest<DatabaseEnginesResponse>(`${API_PATHS.databases}/engines`, { token });
 
 export const fetchDatabaseCredentials = (token: string, databaseId: string) =>
   apiRequest<DatabaseCredentials>(`${API_PATHS.databases}/${databaseId}/credentials`, { token });

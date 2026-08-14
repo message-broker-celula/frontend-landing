@@ -19,7 +19,7 @@ interface UseProvisioningResult {
   message: string | null;
   database: DatabaseInstance | null;
   error: string | null;
-  start: (dbName?: string) => Promise<void>;
+  start: (payload: { nombre_motor: string; version_motor: string; nombre_bd: string }) => Promise<void>;
 }
 
 export function useProvisioning(): UseProvisioningResult {
@@ -109,7 +109,7 @@ export function useProvisioning(): UseProvisioningResult {
     [finishSuccess],
   );
 
-  const start = useCallback(async (dbName?: string) => {
+  const start = useCallback(async (payload: { nombre_motor: string; version_motor: string; nombre_bd: string }) => {
     if (!token || startedRef.current) {
       return;
     }
@@ -129,8 +129,8 @@ export function useProvisioning(): UseProvisioningResult {
         return;
       }
 
-      // Disparamos la creación enviando el nombre si existe
-      await provisionDatabase(token, dbName);
+      // Disparamos la creación enviando el motor, versión y nombre
+      await provisionDatabase(token, payload);
 
       if (!activeRef.current) {
         return;

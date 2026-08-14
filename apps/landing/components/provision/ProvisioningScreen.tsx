@@ -8,13 +8,20 @@ import { useProvisioning } from "@/lib/hooks/useProvisioning";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
+import { fetchDatabaseEngines } from "@/lib/api/endpoints";
+import type { DatabaseEngine } from "@/lib/api/types";
 
 export function ProvisioningScreen() {
   const router = useRouter();
-  const { status, signOut } = useAuth();
+  const { status, signOut, token } = useAuth();
   const { phase, message, error, start } = useProvisioning();
+  
+  const [engines, setEngines] = useState<DatabaseEngine[]>([]);
+  const [selectedEngine, setSelectedEngine] = useState<string>("");
+  const [selectedVersion, setSelectedVersion] = useState<string>("");
   const [dbName, setDbName] = useState("");
 
+  // Cargar los motores disponibles al montar el componente
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/");
@@ -22,17 +29,28 @@ export function ProvisioningScreen() {
   }, [router, status]);
 
   useEffect(() => {
-    if (phase !== "success") {
-      return;
-    }
+    const loadEngines = async () => {
+      if (!token) return;
+      try {
+        const res = await fetchDatabaseEngines(token);
+        setEngines(res.engines);
+        if (res.engines.length > 0) {
+          setSelectedEngine(res.engines[0].nombre_motor);
+          setSelectedVersion(res.engines[0].version_motor);
+        }
+      } catch (err) {
+        console.error("Error loading engines", err);
+      }
+    };
+    loadEngines();
+  }, [token]);
 
+  useEffect(() => {
+    if (phase !== "success") return;
     const timer = window.setTimeout(() => {
       router.replace("/dashboard");
     }, 1_400);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
+    return () => window.clearTimeout(timer);
   }, [phase, router]);
 
   if (status === "loading" || status === "unauthenticated") {
@@ -44,11 +62,18 @@ export function ProvisioningScreen() {
     );
   }
 
-  // Manejador del formulario
   const handleCreate = (e: FormEvent) => {
     e.preventDefault();
-    void start(dbName.trim() || undefined);
+    if (!selectedEngine || !selectedVersion) return;
+    void start({ 
+      nombre_motor: selectedEngine, 
+      version_motor: selectedVersion, 
+      nombre_bd: dbName.trim() || "mi_proyecto" 
+    });
   };
+
+  // Filtrar versiones según el motor seleccionado
+  const availableVersions = engines.filter(e => e.nombre_motor === selectedEngine);
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-16">
@@ -89,7 +114,7 @@ export function ProvisioningScreen() {
               <Alert tone="error">{error}</Alert>
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Button onClick={() => void start(dbName.trim() || undefined)}>
+              <Button onClick={() => void start({ nombre_motor: selectedEngine, version_motor: selectedVersion, nombre_bd: dbName.trim() || "mi_proyecto" })}>
                 Reintentar
               </Button>
               <Button variant="secondary" onClick={signOut}>
@@ -109,7 +134,7 @@ export function ProvisioningScreen() {
               Creando tu base de datos
             </h1>
             <p className="mt-2 text-secondary">
-              Estamos aprovisionando tu instancia. Esto suele tardar unos segundos.
+              Estamos aprovisionando tu instancia {selectedEngine}. Esto suele tardar unos segundos.
             </p>
             <div className="mt-6 h-2 overflow-hidden rounded-full bg-line/70">
               <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-series-1 to-series-5" />
@@ -130,10 +155,44 @@ export function ProvisioningScreen() {
               Aprovisiona tu base de datos
             </h1>
             <p className="mt-2 text-secondary">
-              Ponle un nombre a tu proyecto para crear tu instancia gratuita.
+              Elige el motor y ponle un nombre a tu proyecto.
             </p>
 
             <form onSubmit={handleCreate} className="mt-6 flex flex-col gap-4 text-left">
+              
+              {/* Selector de Motor */}
+              <div>
+                <label className="text-xs uppercase tracking-wide text-muted">Motor de Base de Datos</label>
+                <select 
+                  value={selectedEngine}
+                  onChange={(e) => {
+                    setSelectedEngine(e.target.value);
+                    const firstVersion = engines.find(en => en.nombre_motor === e.target.value);
+                    if (firstVersion) setSelectedVersion(firstVersion.version_motor);
+                  }}
+                  className="mt-1 w-full rounded-lg border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
+                >
+                  {Array.from(new Set(engines.map(e => e.nombre_motor))).map(motor => (
+                    <option key={motor} value={motor}>{motor}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Selector de Versión */}
+              <div>
+                <label className="text-xs uppercase tracking-wide text-muted">Versión</label>
+                <select 
+                  value={selectedVersion}
+                  onChange={(e) => setSelectedVersion(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
+                >
+                  {availableVersions.map(v => (
+                    <option key={v.version_motor} value={v.version_motor}>{v.version_motor}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Nombre de la BD */}
               <div>
                 <label className="text-xs uppercase tracking-wide text-muted">Nombre de la base de datos</label>
                 <input
@@ -144,6 +203,7 @@ export function ProvisioningScreen() {
                   className="mt-1 w-full rounded-lg border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
                 />
               </div>
+
               <Button type="submit" className="w-full">
                 Crear Base de Datos
               </Button>
