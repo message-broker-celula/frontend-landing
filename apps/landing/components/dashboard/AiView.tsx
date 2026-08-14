@@ -7,6 +7,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Alert } from "@/components/ui/Alert";
 import { useAuth } from "@/lib/auth/context";
 import { fetchApiKeyStatus, createApiKey, rotateApiKey, revokeApiKey, fetchApiUsage } from "@/lib/api/endpoints";
+import { getErrorMessage } from "@/lib/api/errors";
 import type { ApiKeyStatus, ApiKeyResponse, ApiUsage } from "@/lib/api/types";
 
 export function AiView() {
@@ -54,8 +55,8 @@ export function AiView() {
       setGeneratedKey(newKey);
       setIsModalOpen(true);
       loadData(); // Recargamos el estado para que aparezca como activa
-    } catch (err: any) {
-      setActionError(err.message || "Error al generar la API Key.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Error al generar la API Key."));
     }
   };
 
@@ -68,8 +69,8 @@ export function AiView() {
       setGeneratedKey(newKey);
       setIsModalOpen(true);
       loadData();
-    } catch (err: any) {
-      setActionError(err.message || "Error al rotar la API Key.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Error al rotar la API Key."));
     }
   };
 
@@ -81,8 +82,8 @@ export function AiView() {
       await revokeApiKey(token);
       setKeyStatus(null);
       setUsage(null);
-    } catch (err: any) {
-      setActionError(err.message || "Error al revocar la API Key.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Error al revocar la API Key."));
     }
   };
 

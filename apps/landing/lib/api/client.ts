@@ -19,17 +19,41 @@ function resolveUrl(path: string): string {
   return `${apiUrl}${normalized}`;
 }
 
+// FastAPI's `detail` is usually a plain string, but on a request-validation
+// failure (422, e.g. a body it didn't expect at all) it's an *array* of
+// {loc, msg, type} objects instead. Passing that straight into `Error`'s
+// constructor silently stringifies it to the literal text "[object Object]"
+// (or "[object Object],[object Object]" for more than one) via the
+// language's default ToString coercion -- this normalizes it into an
+// actual readable message no matter which shape comes back.
+function stringifyErrorDetail(detail: unknown, fallback: string): string {
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+  if (Array.isArray(detail) && detail.length > 0) {
+    const parts = detail.map((item) =>
+      item && typeof item === "object" && "msg" in item ? String((item as { msg: unknown }).msg) : JSON.stringify(item),
+    );
+    return parts.join("; ");
+  }
+  if (detail && typeof detail === "object") {
+    return JSON.stringify(detail);
+  }
+  return fallback;
+}
+
 async function parseError(response: Response): Promise<ApiError> {
-  let message = `Error ${response.status}`;
+  const fallback = `Error ${response.status}`;
 
   if (response.status === 429) {
-    message = "Has realizado demasiadas peticiones. Por favor, espera unos minutos antes de intentar de nuevo.";
+    const message = "Has realizado demasiadas peticiones. Por favor, espera unos minutos antes de intentar de nuevo.";
     return new ApiError(message, response.status, "RATE_LIMIT_EXCEEDED");
   }
 
+  let message = fallback;
   try {
     const data = (await response.json()) as ApiErrorBody;
-    message = data.detail ?? message; 
+    message = stringifyErrorDetail(data.detail, fallback);
   } catch {
     // Response body is not JSON
   }
