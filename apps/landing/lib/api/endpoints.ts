@@ -78,6 +78,9 @@ export const pauseDatabase = (token: string, databaseId: string) =>
 export const resumeDatabase = (token: string, databaseId: string) =>
   apiRequest<DatabaseActionResponse>(`${API_PATHS.databases}/${databaseId}/resume`, { method: "POST", token });
 
+export const deleteDatabase = (token: string, databaseId: string) =>
+  apiRequest<DatabaseActionResponse>(`${API_PATHS.databases}/${databaseId}`, { method: "DELETE", token });
+
 // ==========================================
 // Metrics
 // ==========================================

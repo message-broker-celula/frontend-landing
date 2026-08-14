@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
-import { CredentialsCard } from "@/components/dashboard/CredentialsCard";
-import { StorageMonitor } from "@/components/dashboard/StorageMonitor";
+import { DatabasesView } from "@/components/dashboard/DatabasesView";
 import { DnsView } from "@/components/dashboard/DnsView";
 import { AiView } from "@/components/dashboard/AiView";
 import { N8nView } from "@/components/dashboard/N8nView";
@@ -12,8 +11,6 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import Link from "next/link";
-import { fetchDatabaseCredentials, fetchDatabaseUsage } from "@/lib/api/endpoints";
-import type { DatabaseCredentials, DatabaseUsage } from "@/lib/api/types";
 import { Logo } from "@/components/Logo";
 import { Database, Workflow, Sparkles, Globe, LogOut } from "lucide-react";
 
@@ -25,7 +22,6 @@ export default function DashboardPage() {
     status,
     user,
     database,
-    token,
     needsProvisioning,
     error,
     refreshSession,
@@ -34,9 +30,6 @@ export default function DashboardPage() {
   } = useAuth();
 
   const [activeView, setActiveView] = useState<DashboardView>("database");
-  const [credentials, setCredentials] = useState<DatabaseCredentials | null>(null);
-  const [usage, setUsage] = useState<DatabaseUsage | null>(null);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -47,30 +40,6 @@ export default function DashboardPage() {
       router.replace("/provision");
     }
   }, [needsProvisioning, router, status]);
-
-  useEffect(() => {
-    if (!token || !database) return;
-    let cancelled = false;
-    const loadDetails = async () => {
-      setIsLoadingDetails(true);
-      try {
-        const [creds, use] = await Promise.all([
-          fetchDatabaseCredentials(token, database.database_id),
-          fetchDatabaseUsage(token, database.database_id),
-        ]);
-        if (!cancelled) {
-          setCredentials(creds);
-          setUsage(use);
-        }
-      } catch (err) {
-        console.error("Error fetching database details:", err);
-      } finally {
-        if (!cancelled) setIsLoadingDetails(false);
-      }
-    };
-    loadDetails();
-    return () => { cancelled = true; };
-  }, [token, database]);
 
   if (status === "loading" || status === "unauthenticated") {
     return (
@@ -144,13 +113,13 @@ export default function DashboardPage() {
           {/* Encabezado dinámico según la vista */}
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">
-              {activeView === "database" && "Tu Base de Datos"}
+              {activeView === "database" && "Tus Bases de Datos"}
               {activeView === "n8n" && "Automatización (N8N)"}
               {activeView === "ai" && "Inteligencia Artificial"}
               {activeView === "dns" && "Gestión de Dominios"}
             </h1>
             <p className="mt-2 text-secondary">
-              {activeView === "database" && "Credenciales, estado y monitoreo de tu base de datos."}
+              {activeView === "database" && "Crea, conecta y administra tus bases de datos."}
               {activeView === "n8n" && "Crea y gestiona tus flujos de trabajo automatizados."}
               {activeView === "ai" && "Genera API Keys para integrar IA en tus proyectos."}
               {activeView === "dns" && "Crea y administra tus propios subdominios."}
@@ -174,16 +143,7 @@ export default function DashboardPage() {
                 </Alert>
               ) : null}
 
-              {isLoadingDetails ? (
-                <div className="flex items-center justify-center gap-3 py-10 text-secondary">
-                  <Spinner /> Obteniendo credenciales…
-                </div>
-              ) : (
-                <>
-                  <CredentialsCard database={database} credentials={credentials} />
-                  <StorageMonitor database={database} usage={usage} />
-                </>
-              )}
+              <DatabasesView />
             </>
           )}
 
