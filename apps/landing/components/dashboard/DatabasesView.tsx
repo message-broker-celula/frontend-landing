@@ -102,7 +102,7 @@ export function DatabasesView() {
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    if (!token || !selectedEngine || !selectedVersion) return;
+    if (!token || !selectedEngine || !selectedVersion || !dbName.trim()) return;
     setIsCreating(true);
     setError(null);
     try {
@@ -220,14 +220,16 @@ export function DatabasesView() {
                 value={dbName}
                 onChange={(e) => setDbName(e.target.value)}
                 placeholder="mi_proyecto"
+                required
                 className="mt-1 w-full rounded-lg border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
               />
               <p className="mt-1 text-xs text-muted">
-                Se ajusta automáticamente a minúsculas y guiones bajos si hace falta.
+                Obligatorio -- se ajusta automáticamente a minúsculas y guiones bajos si hace falta.
+                Si ya tienes una base de datos con ese nombre, elige uno distinto.
               </p>
             </div>
             <div>
-              <Button type="submit" loading={isCreating} disabled={isCreating || !selectedEngine}>
+              <Button type="submit" loading={isCreating} disabled={isCreating || !selectedEngine || !dbName.trim()}>
                 Crear
               </Button>
             </div>
