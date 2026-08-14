@@ -19,7 +19,7 @@ interface UseProvisioningResult {
   message: string | null;
   database: DatabaseInstance | null;
   error: string | null;
-  start: () => Promise<void>;
+  start: (dbName?: string) => Promise<void>;
 }
 
 export function useProvisioning(): UseProvisioningResult {
@@ -61,7 +61,6 @@ export function useProvisioning(): UseProvisioningResult {
 
       while (activeRef.current) {
         try {
-          // Consultamos la lista de bases de datos para ver el estado actual
           const response = await fetchUserDatabases(accessToken);
           if (!activeRef.current) {
             return;
@@ -90,7 +89,6 @@ export function useProvisioning(): UseProvisioningResult {
             return;
           }
 
-          // 🛡️ MEJORA ANTI-QA: Silenciamos el rate limiting (429)
           if (!(pollError instanceof ApiError && pollError.status === 429)) {
             setPhase("error");
             setError(
@@ -103,7 +101,6 @@ export function useProvisioning(): UseProvisioningResult {
           }
         }
 
-        // Esperamos 2.5s antes de la siguiente verificación
         await new Promise((resolve) => {
           window.setTimeout(resolve, POLL_INTERVAL_MS);
         });
@@ -112,7 +109,7 @@ export function useProvisioning(): UseProvisioningResult {
     [finishSuccess],
   );
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (dbName?: string) => {
     if (!token || startedRef.current) {
       return;
     }
@@ -122,33 +119,29 @@ export function useProvisioning(): UseProvisioningResult {
     setPhase("starting");
 
     try {
-      // Si la sesión ya dice que está activa, terminamos
       if (sessionDatabase?.status === "active") {
         await finishSuccess(sessionDatabase);
         return;
       }
 
-      // Si ya está en provisión, solo poleamos
       if (sessionDatabase?.status === "provisioning" || sessionDatabase?.status === "unknown") {
         await pollUntilReady(token);
         return;
       }
 
-      // Disparamos la creación de la base de datos
-      await provisionDatabase(token);
+      // Disparamos la creación enviando el nombre si existe
+      await provisionDatabase(token, dbName);
 
       if (!activeRef.current) {
         return;
       }
 
-      // Empezamos a polear para saber cuándo termina
       await pollUntilReady(token);
     } catch (startError) {
       if (!activeRef.current) {
         return;
       }
 
-      // Si el backend dice que ya se estaba creando (409), solo poleamos
       if (startError instanceof ApiError && startError.status === 409) {
         await pollUntilReady(token);
         return;
