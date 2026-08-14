@@ -51,7 +51,6 @@ function CredentialRow({
   );
 }
 
-// Actualizamos las props para recibir la instancia y las credenciales por separado
 export function CredentialsCard({
   database,
   credentials,
@@ -76,8 +75,8 @@ export function CredentialsCard({
       <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
         <div className="rounded-xl border border-line bg-background/60 px-3 py-2">
           <p className="text-xs text-muted">Motor</p>
-          {/* Asumimos SQL Server basado en la documentación del proyecto */}
-          <p className="mt-1 font-medium">SQL Server</p> 
+          {/* Usamos el motor real devuelto por el backend */}
+          <p className="mt-1 font-medium">{database.engine || "N/A"}</p>
         </div>
         <div className="rounded-xl border border-line bg-background/60 px-3 py-2">
           <p className="text-xs text-muted">Creación</p>

@@ -11,7 +11,6 @@ import {
 } from "@/lib/format";
 import { Alert } from "@/components/ui/Alert";
 
-// Actualizamos las props para recibir la instancia y el uso por separado
 export function StorageMonitor({
   database,
   usage,
@@ -19,7 +18,6 @@ export function StorageMonitor({
   database: DatabaseInstance;
   usage: DatabaseUsage | null;
 }) {
-  // Convertimos MB a Bytes para que funcione con tu función formatBytes existente
   const usedBytes = (usage?.storage_used_mb ?? 0) * 1024 * 1024;
   const maxBytes = (usage?.storage_limit_mb ?? 20) * 1024 * 1024;
 
@@ -75,11 +73,18 @@ export function StorageMonitor({
         </div>
       ) : null}
 
-      <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+      {/* Ajustado a grid-cols-4 para incluir la última actividad */}
+      <dl className="mt-6 grid gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-line bg-background/60 px-3 py-3">
           <dt className="text-xs text-muted">Creación</dt>
           <dd className="mt-1 text-sm font-medium">
             {formatDate(database.created_at)}
+          </dd>
+        </div>
+        <div className="rounded-xl border border-line bg-background/60 px-3 py-3">
+          <dt className="text-xs text-muted">Última actividad</dt>
+          <dd className="mt-1 text-sm font-medium">
+            {formatDate(database.last_activity)}
           </dd>
         </div>
         <div className="rounded-xl border border-line bg-background/60 px-3 py-3">
